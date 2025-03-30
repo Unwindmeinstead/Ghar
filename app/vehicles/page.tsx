@@ -654,14 +654,6 @@ export default function VehiclesPage() {
                 <FaCar size={40} className="mx-auto mb-4 text-gray-300" />
                 <h3 className="text-lg font-medium text-gray-400 mb-1">No vehicles yet</h3>
                 <p className="text-sm mb-4">Add your first vehicle to get started</p>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAddVehicle(true)}
-                  className="mx-auto flex items-center space-x-2"
-                >
-                  <FiPlus size={14} />
-                  <span>Add Vehicle</span>
-                </Button>
               </div>
             )}
           </Card>
