@@ -179,7 +179,7 @@ const Sidebar = memo(() => {
             >
               <div className="flex items-center justify-between p-4 border-b border-gray-100">
                 <div className="flex items-center">
-                  <div className="w-10 h-10 relative mr-3">
+                  <div className="w-8 h-8 relative mr-3">
                     <Image src="/logo.svg" alt="Logo" fill className="object-contain" />
                   </div>
                   <h1 className="text-lg font-bold">Ghar</h1>
@@ -273,7 +273,7 @@ const Sidebar = memo(() => {
         {/* Header */}
         <div className="p-4 flex items-center justify-between border-b border-gray-100">
           <div className="flex items-center">
-            <div className="w-10 h-10 relative flex-shrink-0">
+            <div className="w-8 h-8 relative flex-shrink-0">
               <Image 
                 src="/logo.svg" 
                 alt="Logo" 
