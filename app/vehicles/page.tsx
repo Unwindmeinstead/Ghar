@@ -452,10 +452,11 @@ export default function VehiclesPage() {
               <Button 
                 variant="primary"
                 size="sm"
-                icon={<FiPlus size={16} />}
                 onClick={() => setShowAddVehicle(true)}
+                className="p-2 h-8 w-8 rounded-full"
+                aria-label="Add vehicle"
               >
-                Add Vehicle
+                <FiPlus size={14} />
               </Button>
               
               {/* Enhanced Sort Dropdown */}
@@ -660,11 +661,11 @@ export default function VehiclesPage() {
                 <p className="text-sm mb-4">Add your first vehicle to get started</p>
                 <Button
                   variant="outline"
-                  icon={<FiPlus />}
-                  className="mx-auto"
                   onClick={() => setShowAddVehicle(true)}
+                  className="mx-auto flex items-center space-x-2"
                 >
-                  Add Vehicle
+                  <FiPlus size={14} />
+                  <span>Add Vehicle</span>
                 </Button>
               </div>
             )}
@@ -682,19 +683,21 @@ export default function VehiclesPage() {
                 <div className="flex space-x-2">
                   <Button 
                     variant="outline"
-                    icon={<FiEdit2 />}
-                    className="text-sm px-3 py-1"
+                    size="sm"
                     onClick={handleEditClick}
+                    className="p-2 h-8 w-8 rounded-full"
+                    aria-label="Edit vehicle"
                   >
-                    Edit
+                    <FiEdit2 size={14} />
                   </Button>
                   <Button 
-                    variant="outline" 
-                    icon={<FiTrash2 />} 
-                    className="text-sm px-3 py-1 text-red-500 border-red-500 hover:bg-red-50"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setShowDeleteConfirmation(true)}
+                    className="p-2 h-8 w-8 rounded-full text-red-500 border-red-200 hover:bg-red-50"
+                    aria-label="Delete vehicle"
                   >
-                    Delete
+                    <FiTrash2 size={14} />
                   </Button>
                 </div>
               </div>
@@ -753,19 +756,21 @@ export default function VehiclesPage() {
                     <div className="flex space-x-2">
                       <Button 
                         variant="primary" 
-                        icon={<FiPlus />} 
-                        className="text-sm px-3 py-1"
+                        size="sm"
                         onClick={handleAddMaintenanceRecord}
+                        className="p-2 h-8 w-8 rounded-full"
+                        aria-label="Add maintenance record"
                       >
-                        Add Record
+                        <FiPlus size={14} />
                       </Button>
                       <Button 
                         variant="outline" 
-                        icon={<FiTool />} 
-                        className="text-sm px-3 py-1"
+                        size="sm"
                         onClick={handleShowMaintenanceDetails}
+                        className="p-2 h-8 w-8 rounded-full"
+                        aria-label="View all maintenance records"
                       >
-                        View All
+                        <FiTool size={14} />
                       </Button>
                     </div>
                   </div>
@@ -780,7 +785,8 @@ export default function VehiclesPage() {
                                 e.stopPropagation();
                                 handleEditMaintenanceRecord(record);
                               }}
-                              className="p-1 text-gray-500 hover:text-primary rounded-full hover:bg-gray-200 transition-colors"
+                              className="p-1.5 text-gray-500 hover:text-primary bg-white rounded-full hover:bg-gray-100 transition-colors shadow-sm"
+                              aria-label="Edit maintenance record"
                             >
                               <FiEdit2 size={12} />
                             </button>
@@ -789,7 +795,8 @@ export default function VehiclesPage() {
                                 e.stopPropagation();
                                 handleDeleteMaintenanceRecord(record.id);
                               }}
-                              className="p-1 text-gray-500 hover:text-red-500 rounded-full hover:bg-gray-200 transition-colors"
+                              className="p-1.5 text-gray-500 hover:text-red-500 bg-white rounded-full hover:bg-gray-100 transition-colors shadow-sm"
+                              aria-label="Delete maintenance record"
                             >
                               <FiTrash2 size={12} />
                             </button>
@@ -819,18 +826,21 @@ export default function VehiclesPage() {
                     <div className="flex space-x-2">
                       <Button 
                         variant="primary" 
-                        icon={<FiPlus />} 
-                        className="text-sm px-3 py-1 mr-2"
+                        size="sm"
                         onClick={handleAddMaintenanceRecord}
+                        className="p-2 h-8 w-8 rounded-full mr-1"
+                        aria-label="Add maintenance record"
                       >
-                        Add Record
+                        <FiPlus size={14} />
                       </Button>
                       <Button 
-                        variant="outline" 
-                        className="text-sm px-3 py-1"
+                        variant="outline"
+                        size="sm" 
                         onClick={handleShowMaintenanceDetails}
+                        className="p-2 h-8 w-8 rounded-full"
+                        aria-label="Back to summary view"
                       >
-                        Back
+                        <FiArrowUp size={14} />
                       </Button>
                     </div>
                   </div>
@@ -845,7 +855,8 @@ export default function VehiclesPage() {
                                 e.stopPropagation();
                                 handleEditMaintenanceRecord(record);
                               }}
-                              className="p-1 text-gray-500 hover:text-primary rounded-full hover:bg-gray-200 transition-colors"
+                              className="p-1.5 text-gray-500 hover:text-primary bg-white rounded-full hover:bg-gray-100 transition-colors shadow-sm"
+                              aria-label="Edit maintenance record"
                             >
                               <FiEdit2 size={12} />
                             </button>
@@ -854,7 +865,8 @@ export default function VehiclesPage() {
                                 e.stopPropagation();
                                 handleDeleteMaintenanceRecord(record.id);
                               }}
-                              className="p-1 text-gray-500 hover:text-red-500 rounded-full hover:bg-gray-200 transition-colors"
+                              className="p-1.5 text-gray-500 hover:text-red-500 bg-white rounded-full hover:bg-gray-100 transition-colors shadow-sm"
+                              aria-label="Delete maintenance record"
                             >
                               <FiTrash2 size={12} />
                             </button>
@@ -913,13 +925,17 @@ export default function VehiclesPage() {
             <div className="flex justify-end space-x-3">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setShowDeleteConfirmation(false)}
+                className="px-4 py-2"
               >
                 Cancel
               </Button>
               <Button
                 variant="danger"
+                size="sm"
                 onClick={handleDeleteVehicle}
+                className="px-4 py-2"
               >
                 Delete Vehicle
               </Button>
@@ -1026,13 +1042,17 @@ export default function VehiclesPage() {
             <div className="flex justify-end space-x-3 pt-3 border-t border-gray-100">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setShowEditVehicle(false)}
+                className="px-4 py-2"
               >
                 Cancel
               </Button>
               <Button
                 variant="primary"
+                size="sm"
                 onClick={handleSaveEdit}
+                className="px-4 py-2"
               >
                 Save Changes
               </Button>
@@ -1151,14 +1171,17 @@ export default function VehiclesPage() {
             <div className="flex justify-end space-x-3 pt-3 border-t border-gray-100">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setShowAddVehicle(false)}
+                className="px-4 py-2"
               >
                 Cancel
               </Button>
               <Button
                 variant="primary"
-                icon={<FiPlus />}
+                size="sm"
                 onClick={handleSaveNewVehicle}
+                className="px-4 py-2"
               >
                 Add Vehicle
               </Button>
@@ -1219,14 +1242,17 @@ export default function VehiclesPage() {
             <div className="flex justify-end space-x-3 mt-6">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setShowMaintenanceForm(false)}
+                className="px-4 py-2"
               >
                 Cancel
               </Button>
               <Button
                 variant="primary"
-                icon={<FiSave />}
+                size="sm"
                 onClick={handleSaveMaintenanceRecord}
+                className="px-4 py-2"
               >
                 Save Record
               </Button>
