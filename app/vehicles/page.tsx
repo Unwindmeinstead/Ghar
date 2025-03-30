@@ -463,17 +463,12 @@ export default function VehiclesPage() {
               <div className="relative" ref={sortDropdownRef}>
                 <Button 
                   variant="outline"
-                  className={`text-xs px-2 py-0.5 ${showSortOptions ? 'bg-gray-100' : ''}`}
+                  size="sm"
+                  className={`p-2 h-8 w-8 rounded-full ${showSortOptions ? 'bg-gray-100' : ''}`}
                   onClick={() => setShowSortOptions(!showSortOptions)}
-                  icon={<FiFilter size={12} />}
+                  aria-label="Sort vehicles"
                 >
-                  {sortBy === 'newest' && 'Newest First'}
-                  {sortBy === 'oldest' && 'Oldest First'}
-                  {sortBy === 'make' && 'By Make'}
-                  <FiChevronDown 
-                    size={12} 
-                    className={`ml-1 transition-transform duration-200 ${showSortOptions ? 'transform rotate-180' : ''}`} 
-                  />
+                  <FiFilter size={14} />
                 </Button>
                 
                 <AnimatePresence>
