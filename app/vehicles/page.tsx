@@ -4,13 +4,14 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   FiPlus, FiTrash2, FiEdit2, FiCalendar, FiDollarSign, 
   FiTool, FiInfo, FiFilter, FiChevronDown, FiAlertCircle,
-  FiCheckCircle, FiArrowDown, FiArrowUp, FiList
+  FiCheckCircle, FiArrowDown, FiArrowUp, FiList, FiX, FiSave
 } from 'react-icons/fi';
 import { FaCar } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '@/components/DashboardLayout';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
+import Modal from '@/components/Modal';
 
 // Define type for vehicle data
 interface MaintenanceRecord {
@@ -45,6 +46,34 @@ export default function VehiclesPage() {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'make'>('newest');
   const [showSortOptions, setShowSortOptions] = useState(false);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
+  
+  // New state variables for edit and delete functionality
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showEditVehicle, setShowEditVehicle] = useState(false);
+  const [editFormData, setEditFormData] = useState<Vehicle | null>(null);
+  
+  // Maintenance record state
+  const [showMaintenanceForm, setShowMaintenanceForm] = useState(false);
+  const [currentMaintenanceRecord, setCurrentMaintenanceRecord] = useState<MaintenanceRecord | null>(null);
+  const [maintenanceFormData, setMaintenanceFormData] = useState<Partial<MaintenanceRecord>>({
+    date: new Date().toISOString().split('T')[0],
+    description: '',
+    cost: 0
+  });
+
+  const [newVehicleData, setNewVehicleData] = useState<Partial<Vehicle>>({
+    make: '',
+    model: '',
+    year: new Date().getFullYear(),
+    licensePlate: '',
+    insurance: {
+      provider: '',
+      policyNumber: '',
+      expiryDate: new Date().toISOString().split('T')[0],
+      premium: 0
+    },
+    maintenanceRecords: []
+  });
 
   // Load vehicles from localStorage on component mount
   useEffect(() => {
@@ -58,6 +87,11 @@ export default function VehiclesPage() {
       }
     }
   }, []);
+
+  // Save vehicles to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('vehicles', JSON.stringify(vehicles));
+  }, [vehicles]);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -142,6 +176,236 @@ export default function VehiclesPage() {
     }
   });
 
+  // Handle vehicle deletion
+  const handleDeleteVehicle = () => {
+    if (selectedVehicle) {
+      // Filter out the selected vehicle from the vehicles array
+      const updatedVehicles = vehicles.filter(vehicle => vehicle.id !== selectedVehicle.id);
+      setVehicles(updatedVehicles);
+      
+      // Reset selected vehicle and close modal
+      setSelectedVehicle(null);
+      setShowDeleteConfirmation(false);
+    }
+  };
+  
+  // Initialize edit form
+  const handleEditClick = () => {
+    if (selectedVehicle) {
+      setEditFormData({...selectedVehicle});
+      setShowEditVehicle(true);
+    }
+  };
+  
+  // Handle form input changes for editing
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { id, value } = e.target;
+    
+    if (!editFormData) return;
+    
+    if (id.includes('insurance.')) {
+      // Handle nested insurance properties
+      const insuranceField = id.split('.')[1];
+      setEditFormData({
+        ...editFormData,
+        insurance: {
+          ...editFormData.insurance,
+          [insuranceField]: insuranceField === 'premium' ? parseFloat(value) : value
+        }
+      });
+    } else {
+      // Handle top-level properties
+      setEditFormData({
+        ...editFormData,
+        [id]: id === 'year' ? parseInt(value, 10) : value
+      });
+    }
+  };
+  
+  // Submit edit form
+  const handleSaveEdit = () => {
+    if (!editFormData) return;
+    
+    // Update the vehicle in the vehicles array
+    const updatedVehicles = vehicles.map(vehicle => 
+      vehicle.id === editFormData.id ? editFormData : vehicle
+    );
+    
+    setVehicles(updatedVehicles);
+    setSelectedVehicle(editFormData);
+    setShowEditVehicle(false);
+  };
+  
+  // Add a new maintenance record
+  const handleAddMaintenanceRecord = () => {
+    // Reset form data
+    setMaintenanceFormData({
+      date: new Date().toISOString().split('T')[0],
+      description: '',
+      cost: 0
+    });
+    setCurrentMaintenanceRecord(null);
+    setShowMaintenanceForm(true);
+  };
+  
+  // Edit existing maintenance record
+  const handleEditMaintenanceRecord = (record: MaintenanceRecord) => {
+    setMaintenanceFormData({
+      date: record.date.split('T')[0],
+      description: record.description,
+      cost: record.cost
+    });
+    setCurrentMaintenanceRecord(record);
+    setShowMaintenanceForm(true);
+  };
+  
+  // Delete maintenance record
+  const handleDeleteMaintenanceRecord = (recordId: number) => {
+    if (!selectedVehicle) return;
+    
+    // Filter out the record
+    const updatedRecords = selectedVehicle.maintenanceRecords.filter(
+      record => record.id !== recordId
+    );
+    
+    // Update the vehicle
+    const updatedVehicle = {
+      ...selectedVehicle,
+      maintenanceRecords: updatedRecords
+    };
+    
+    // Update vehicles array
+    const updatedVehicles = vehicles.map(vehicle => 
+      vehicle.id === selectedVehicle.id ? updatedVehicle : vehicle
+    );
+    
+    setVehicles(updatedVehicles);
+    setSelectedVehicle(updatedVehicle);
+  };
+  
+  // Handle maintenance form input changes
+  const handleMaintenanceFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    
+    setMaintenanceFormData(prev => ({
+      ...prev,
+      [id]: id === 'cost' ? parseFloat(value) : value
+    }));
+  };
+  
+  // Save maintenance record
+  const handleSaveMaintenanceRecord = () => {
+    if (!selectedVehicle || !maintenanceFormData.description) return;
+    
+    const updatedVehicle = { ...selectedVehicle };
+    
+    if (currentMaintenanceRecord) {
+      // Editing existing record
+      updatedVehicle.maintenanceRecords = updatedVehicle.maintenanceRecords.map(record => 
+        record.id === currentMaintenanceRecord.id 
+          ? { 
+              ...record, 
+              date: maintenanceFormData.date || record.date,
+              description: maintenanceFormData.description || record.description,
+              cost: maintenanceFormData.cost !== undefined ? maintenanceFormData.cost : record.cost
+            } 
+          : record
+      );
+    } else {
+      // Adding new record
+      const newRecord: MaintenanceRecord = {
+        id: Date.now(),
+        date: maintenanceFormData.date || new Date().toISOString().split('T')[0],
+        description: maintenanceFormData.description || 'Maintenance',
+        cost: maintenanceFormData.cost || 0
+      };
+      
+      updatedVehicle.maintenanceRecords = [
+        ...updatedVehicle.maintenanceRecords,
+        newRecord
+      ];
+    }
+    
+    // Update vehicles array
+    const updatedVehicles = vehicles.map(vehicle => 
+      vehicle.id === selectedVehicle.id ? updatedVehicle : vehicle
+    );
+    
+    setVehicles(updatedVehicles);
+    setSelectedVehicle(updatedVehicle);
+    setShowMaintenanceForm(false);
+  };
+
+  // Handle new vehicle form change
+  const handleNewVehicleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { id, value } = e.target;
+    
+    if (id.includes('insurance.')) {
+      // Handle nested insurance properties
+      const insuranceField = id.split('.')[1];
+      setNewVehicleData(prev => ({
+        ...prev,
+        insurance: {
+          ...prev.insurance!,
+          [insuranceField]: insuranceField === 'premium' ? parseFloat(value) : value
+        }
+      }));
+    } else {
+      // Handle top-level properties
+      setNewVehicleData(prev => ({
+        ...prev,
+        [id]: id === 'year' ? parseInt(value, 10) : value
+      }));
+    }
+  };
+  
+  // Save new vehicle
+  const handleSaveNewVehicle = () => {
+    // Validate required fields
+    if (!newVehicleData.make || !newVehicleData.model || !newVehicleData.licensePlate) {
+      return; // Don't save if required fields are missing
+    }
+    
+    // Create new vehicle with unique ID
+    const newVehicle: Vehicle = {
+      id: Date.now(),
+      make: newVehicleData.make || '',
+      model: newVehicleData.model || '',
+      year: newVehicleData.year || new Date().getFullYear(),
+      licensePlate: newVehicleData.licensePlate || '',
+      insurance: {
+        provider: newVehicleData.insurance?.provider || '',
+        policyNumber: newVehicleData.insurance?.policyNumber || '',
+        expiryDate: newVehicleData.insurance?.expiryDate || new Date().toISOString().split('T')[0],
+        premium: newVehicleData.insurance?.premium || 0
+      },
+      maintenanceRecords: []
+    };
+    
+    // Add to vehicles array
+    const updatedVehicles = [...vehicles, newVehicle];
+    setVehicles(updatedVehicles);
+    
+    // Select the new vehicle and close modal
+    setSelectedVehicle(newVehicle);
+    setShowAddVehicle(false);
+    
+    // Reset form
+    setNewVehicleData({
+      make: '',
+      model: '',
+      year: new Date().getFullYear(),
+      licensePlate: '',
+      insurance: {
+        provider: '',
+        policyNumber: '',
+        expiryDate: new Date().toISOString().split('T')[0],
+        premium: 0
+      },
+      maintenanceRecords: []
+    });
+  };
+
   return (
     <DashboardLayout title="Vehicles">
       {/* Summary Cards */}
@@ -183,6 +447,16 @@ export default function VehiclesPage() {
           <Card className="mb-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Your Vehicles</h2>
+              
+              {/* Add Button */}
+              <Button 
+                variant="primary"
+                size="sm"
+                icon={<FiPlus size={16} />}
+                onClick={() => setShowAddVehicle(true)}
+              >
+                Add Vehicle
+              </Button>
               
               {/* Enhanced Sort Dropdown */}
               <div className="relative" ref={sortDropdownRef}>
@@ -388,6 +662,7 @@ export default function VehiclesPage() {
                   variant="outline"
                   icon={<FiPlus />}
                   className="mx-auto"
+                  onClick={() => setShowAddVehicle(true)}
                 >
                   Add Vehicle
                 </Button>
@@ -409,6 +684,7 @@ export default function VehiclesPage() {
                     variant="outline"
                     icon={<FiEdit2 />}
                     className="text-sm px-3 py-1"
+                    onClick={handleEditClick}
                   >
                     Edit
                   </Button>
@@ -416,6 +692,7 @@ export default function VehiclesPage() {
                     variant="outline" 
                     icon={<FiTrash2 />} 
                     className="text-sm px-3 py-1 text-red-500 border-red-500 hover:bg-red-50"
+                    onClick={() => setShowDeleteConfirmation(true)}
                   >
                     Delete
                   </Button>
@@ -478,6 +755,7 @@ export default function VehiclesPage() {
                         variant="primary" 
                         icon={<FiPlus />} 
                         className="text-sm px-3 py-1"
+                        onClick={handleAddMaintenanceRecord}
                       >
                         Add Record
                       </Button>
@@ -495,7 +773,27 @@ export default function VehiclesPage() {
                   <div className="space-y-3">
                     {selectedVehicle.maintenanceRecords.length > 0 ? (
                       selectedVehicle.maintenanceRecords.slice(0, 3).map((record) => (
-                        <div key={record.id} className="bg-gray-50 p-3 rounded-lg">
+                        <div key={record.id} className="bg-gray-50 p-3 rounded-lg relative group">
+                          <div className="absolute right-3 top-3 hidden group-hover:flex space-x-1">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditMaintenanceRecord(record);
+                              }}
+                              className="p-1 text-gray-500 hover:text-primary rounded-full hover:bg-gray-200 transition-colors"
+                            >
+                              <FiEdit2 size={12} />
+                            </button>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteMaintenanceRecord(record.id);
+                              }}
+                              className="p-1 text-gray-500 hover:text-red-500 rounded-full hover:bg-gray-200 transition-colors"
+                            >
+                              <FiTrash2 size={12} />
+                            </button>
+                          </div>
                           <div className="flex justify-between mb-1">
                             <p className="font-medium">{record.description}</p>
                             <p className="text-sm text-primary font-semibold">${record.cost.toLocaleString()}</p>
@@ -523,6 +821,7 @@ export default function VehiclesPage() {
                         variant="primary" 
                         icon={<FiPlus />} 
                         className="text-sm px-3 py-1 mr-2"
+                        onClick={handleAddMaintenanceRecord}
                       >
                         Add Record
                       </Button>
@@ -539,7 +838,27 @@ export default function VehiclesPage() {
                   <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                     {selectedVehicle.maintenanceRecords.length > 0 ? (
                       selectedVehicle.maintenanceRecords.map((record) => (
-                        <div key={record.id} className="bg-gray-50 p-3 rounded-lg">
+                        <div key={record.id} className="bg-gray-50 p-3 rounded-lg relative group">
+                          <div className="absolute right-3 top-3 hidden group-hover:flex space-x-1">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditMaintenanceRecord(record);
+                              }}
+                              className="p-1 text-gray-500 hover:text-primary rounded-full hover:bg-gray-200 transition-colors"
+                            >
+                              <FiEdit2 size={12} />
+                            </button>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteMaintenanceRecord(record.id);
+                              }}
+                              className="p-1 text-gray-500 hover:text-red-500 rounded-full hover:bg-gray-200 transition-colors"
+                            >
+                              <FiTrash2 size={12} />
+                            </button>
+                          </div>
                           <div className="flex justify-between mb-1">
                             <p className="font-medium">{record.description}</p>
                             <p className="text-sm text-primary font-semibold">${record.cost.toLocaleString()}</p>
@@ -571,6 +890,350 @@ export default function VehiclesPage() {
           )}
         </div>
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirmation && selectedVehicle && (
+        <Modal 
+          title="Confirm Deletion" 
+          onClose={() => setShowDeleteConfirmation(false)}
+          isOpen={showDeleteConfirmation}
+        >
+          <div className="p-6">
+            <div className="text-center mb-6">
+              <div className="bg-red-100 text-red-500 rounded-full p-3 inline-block mb-4">
+                <FiTrash2 size={24} />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Delete {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}?
+              </h3>
+              <p className="text-sm text-gray-500">
+                This action cannot be undone. All data including maintenance records will be permanently deleted.
+              </p>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirmation(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleDeleteVehicle}
+              >
+                Delete Vehicle
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      
+      {/* Edit Vehicle Modal */}
+      {showEditVehicle && editFormData && (
+        <Modal 
+          title="Edit Vehicle" 
+          onClose={() => setShowEditVehicle(false)}
+          isOpen={showEditVehicle}
+        >
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label htmlFor="make" className="block text-sm font-medium text-gray-700 mb-1">Make</label>
+                <input
+                  type="text"
+                  id="make"
+                  value={editFormData.make}
+                  onChange={handleEditFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                />
+              </div>
+              <div>
+                <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                <input
+                  type="text"
+                  id="model"
+                  value={editFormData.model}
+                  onChange={handleEditFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                />
+              </div>
+              <div>
+                <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                <input
+                  type="number"
+                  id="year"
+                  value={editFormData.year}
+                  onChange={handleEditFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                />
+              </div>
+              <div>
+                <label htmlFor="licensePlate" className="block text-sm font-medium text-gray-700 mb-1">License Plate</label>
+                <input
+                  type="text"
+                  id="licensePlate"
+                  value={editFormData.licensePlate}
+                  onChange={handleEditFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                />
+              </div>
+            </div>
+            
+            <h4 className="font-medium text-gray-700 mb-3">Insurance Information</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label htmlFor="insurance.provider" className="block text-sm font-medium text-gray-700 mb-1">Provider</label>
+                <input
+                  type="text"
+                  id="insurance.provider"
+                  value={editFormData.insurance.provider}
+                  onChange={handleEditFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                />
+              </div>
+              <div>
+                <label htmlFor="insurance.policyNumber" className="block text-sm font-medium text-gray-700 mb-1">Policy Number</label>
+                <input
+                  type="text"
+                  id="insurance.policyNumber"
+                  value={editFormData.insurance.policyNumber}
+                  onChange={handleEditFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                />
+              </div>
+              <div>
+                <label htmlFor="insurance.expiryDate" className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                <input
+                  type="date"
+                  id="insurance.expiryDate"
+                  value={editFormData.insurance.expiryDate.split('T')[0]}
+                  onChange={handleEditFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                />
+              </div>
+              <div>
+                <label htmlFor="insurance.premium" className="block text-sm font-medium text-gray-700 mb-1">Premium</label>
+                <input
+                  type="number"
+                  id="insurance.premium"
+                  value={editFormData.insurance.premium}
+                  onChange={handleEditFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 pt-3 border-t border-gray-100">
+              <Button
+                variant="outline"
+                onClick={() => setShowEditVehicle(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSaveEdit}
+              >
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      
+      {/* Add Vehicle Modal */}
+      {showAddVehicle && (
+        <Modal 
+          title="Add New Vehicle" 
+          onClose={() => setShowAddVehicle(false)}
+          isOpen={showAddVehicle}
+        >
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label htmlFor="make" className="block text-sm font-medium text-gray-700 mb-1">Make*</label>
+                <input
+                  type="text"
+                  id="make"
+                  value={newVehicleData.make}
+                  onChange={handleNewVehicleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  placeholder="Toyota, Honda, etc."
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-1">Model*</label>
+                <input
+                  type="text"
+                  id="model"
+                  value={newVehicleData.model}
+                  onChange={handleNewVehicleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  placeholder="Camry, Civic, etc."
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">Year*</label>
+                <input
+                  type="number"
+                  id="year"
+                  value={newVehicleData.year}
+                  onChange={handleNewVehicleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  placeholder="2023"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="licensePlate" className="block text-sm font-medium text-gray-700 mb-1">License Plate*</label>
+                <input
+                  type="text"
+                  id="licensePlate"
+                  value={newVehicleData.licensePlate}
+                  onChange={handleNewVehicleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  placeholder="ABC-1234"
+                  required
+                />
+              </div>
+            </div>
+            
+            <h4 className="font-medium text-gray-700 mb-3">Insurance Information (Optional)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label htmlFor="insurance.provider" className="block text-sm font-medium text-gray-700 mb-1">Provider</label>
+                <input
+                  type="text"
+                  id="insurance.provider"
+                  value={newVehicleData.insurance?.provider}
+                  onChange={handleNewVehicleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  placeholder="Insurance company"
+                />
+              </div>
+              <div>
+                <label htmlFor="insurance.policyNumber" className="block text-sm font-medium text-gray-700 mb-1">Policy Number</label>
+                <input
+                  type="text"
+                  id="insurance.policyNumber"
+                  value={newVehicleData.insurance?.policyNumber}
+                  onChange={handleNewVehicleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  placeholder="Policy number"
+                />
+              </div>
+              <div>
+                <label htmlFor="insurance.expiryDate" className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                <input
+                  type="date"
+                  id="insurance.expiryDate"
+                  value={newVehicleData.insurance?.expiryDate?.split('T')[0]}
+                  onChange={handleNewVehicleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                />
+              </div>
+              <div>
+                <label htmlFor="insurance.premium" className="block text-sm font-medium text-gray-700 mb-1">Premium ($)</label>
+                <input
+                  type="number"
+                  id="insurance.premium"
+                  value={newVehicleData.insurance?.premium}
+                  onChange={handleNewVehicleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  placeholder="0.00"
+                  step="0.01"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 pt-3 border-t border-gray-100">
+              <Button
+                variant="outline"
+                onClick={() => setShowAddVehicle(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                icon={<FiPlus />}
+                onClick={handleSaveNewVehicle}
+              >
+                Add Vehicle
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      
+      {/* Maintenance Record Form Modal */}
+      {showMaintenanceForm && selectedVehicle && (
+        <Modal 
+          title={currentMaintenanceRecord ? "Edit Maintenance Record" : "Add Maintenance Record"} 
+          onClose={() => setShowMaintenanceForm(false)}
+          isOpen={showMaintenanceForm}
+        >
+          <div className="p-6">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <input
+                  type="date"
+                  id="date"
+                  value={maintenanceFormData.date}
+                  onChange={handleMaintenanceFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <input
+                  type="text"
+                  id="description"
+                  value={maintenanceFormData.description}
+                  onChange={handleMaintenanceFormChange}
+                  placeholder="Oil change, tire rotation, etc."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="cost" className="block text-sm font-medium text-gray-700 mb-1">Cost ($)</label>
+                <input
+                  type="number"
+                  id="cost"
+                  value={maintenanceFormData.cost}
+                  onChange={handleMaintenanceFormChange}
+                  step="0.01"
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowMaintenanceForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                icon={<FiSave />}
+                onClick={handleSaveMaintenanceRecord}
+              >
+                Save Record
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </DashboardLayout>
   );
 } 
