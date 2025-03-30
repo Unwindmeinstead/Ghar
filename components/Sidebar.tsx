@@ -5,21 +5,46 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiHome, FiCreditCard, FiWifi, FiLock, 
   FiDollarSign, FiBarChart2, FiSettings, 
-  FiMenu, FiUser, FiLogOut, FiChevronLeft
+  FiMenu, FiUser, FiLogOut, FiChevronLeft,
+  FiFileText, FiShield
 } from 'react-icons/fi';
 import { FaCar } from 'react-icons/fa';
 import Image from 'next/image';
 
-// Menu items
-const menuItems = [
-  { id: 1, name: 'Dashboard', path: '/', icon: FiHome },
-  { id: 2, name: 'Vehicles', path: '/vehicles', icon: FaCar },
-  { id: 3, name: 'Subscriptions', path: '/subscriptions', icon: FiCreditCard },
-  { id: 4, name: 'Bills', path: '/bills', icon: FiDollarSign },
-  { id: 5, name: 'Passwords', path: '/passwords', icon: FiLock },
-  { id: 6, name: 'WiFi Passwords', path: '/wifi', icon: FiWifi },
-  { id: 7, name: 'Insurance', path: '/insurance', icon: FiBarChart2 },
-  { id: 8, name: 'Savings & Budget', path: '/savings', icon: FiDollarSign },
+// Menu items organized by categories
+const menuCategories = [
+  {
+    id: 'home',
+    name: 'Home',
+    items: [
+      { id: 1, name: 'Dashboard', path: '/', icon: FiHome }
+    ]
+  },
+  {
+    id: 'assets',
+    name: 'Assets',
+    items: [
+      { id: 2, name: 'Vehicles', path: '/vehicles', icon: FaCar }
+    ]
+  },
+  {
+    id: 'finances',
+    name: 'Finances',
+    items: [
+      { id: 3, name: 'Subscriptions', path: '/subscriptions', icon: FiCreditCard },
+      { id: 4, name: 'Bills', path: '/bills', icon: FiFileText },
+      { id: 8, name: 'Savings & Budget', path: '/savings', icon: FiDollarSign }
+    ]
+  },
+  {
+    id: 'security',
+    name: 'Security',
+    items: [
+      { id: 5, name: 'Passwords', path: '/passwords', icon: FiLock },
+      { id: 6, name: 'WiFi Passwords', path: '/wifi', icon: FiWifi },
+      { id: 7, name: 'Insurance', path: '/insurance', icon: FiShield }
+    ]
+  }
 ];
 
 const bottomMenuItems = [
@@ -168,37 +193,39 @@ const Sidebar = memo(() => {
               </div>
 
               <div className="flex-1 overflow-y-auto p-2">
-                <div className="mb-6">
-                  <p className="text-xs uppercase text-gray-400 font-medium px-3 mb-2">
-                    Main Menu
-                  </p>
-                  <nav>
-                    <ul className="space-y-1">
-                      {menuItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = pathname === item.path;
-                        
-                        return (
-                          <li key={item.id}>
-                            <Link 
-                              href={item.path}
-                              className={`
-                                flex items-center py-2 px-3 rounded-lg transition-colors
-                                ${isActive 
-                                  ? 'bg-primary text-white font-medium' 
-                                  : 'text-gray-700 hover:bg-gray-100'}
-                              `}
-                              onClick={toggleMobileMenu}
-                            >
-                              <Icon size={18} className="min-w-[20px]" />
-                              <span className="ml-3">{item.name}</span>
-                            </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </nav>
-                </div>
+                {menuCategories.map((category) => (
+                  <div key={category.id} className="mb-6">
+                    <p className="text-xs uppercase text-gray-400 font-medium px-3 mb-2">
+                      {category.name}
+                    </p>
+                    <nav>
+                      <ul className="space-y-1">
+                        {category.items.map((item) => {
+                          const Icon = item.icon;
+                          const isActive = pathname === item.path;
+                          
+                          return (
+                            <li key={item.id}>
+                              <Link 
+                                href={item.path}
+                                className={`
+                                  flex items-center py-2 px-3 rounded-lg transition-colors
+                                  ${isActive 
+                                    ? 'bg-primary text-white font-medium' 
+                                    : 'text-gray-700 hover:bg-gray-100'}
+                                `}
+                                onClick={toggleMobileMenu}
+                              >
+                                <Icon size={18} className="min-w-[20px]" />
+                                <span className="ml-3">{item.name}</span>
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </nav>
+                  </div>
+                ))}
 
                 <div>
                   <p className="text-xs uppercase text-gray-400 font-medium px-3 mb-2">
@@ -273,40 +300,47 @@ const Sidebar = memo(() => {
 
         {/* Main Menu */}
         <div className="flex-1 overflow-y-auto p-2">
-          {!isCollapsed && (
-            <p className="text-xs uppercase text-gray-400 font-medium px-2 mb-2">
-              Main Menu
-            </p>
-          )}
-          <nav>
-            <ul className="space-y-1">
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.path;
-                
-                return (
-                  <li key={item.id}>
-                    <Link
-                      href={item.path}
-                      className={`
-                        flex items-center py-2 px-3 rounded-lg transition-colors
-                        ${isActive 
-                          ? 'bg-primary text-white' 
-                          : 'text-gray-700 hover:bg-gray-100'}
-                        ${isCollapsed ? 'justify-center' : ''}
-                      `}
-                      title={isCollapsed ? item.name : ''}
-                    >
-                      <Icon size={18} />
-                      {!isCollapsed && (
-                        <span className="ml-3 truncate">{item.name}</span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+          {menuCategories.map((category) => (
+            <div key={category.id} className="mb-6">
+              {!isCollapsed && (
+                <p className="text-xs uppercase text-gray-400 font-medium px-2 mb-2">
+                  {category.name}
+                </p>
+              )}
+              {isCollapsed && category.id !== 'home' && (
+                <div className="h-px bg-gray-100 my-3 mx-2"></div>
+              )}
+              <nav>
+                <ul className="space-y-1">
+                  {category.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.path;
+                    
+                    return (
+                      <li key={item.id}>
+                        <Link
+                          href={item.path}
+                          className={`
+                            flex items-center py-2 px-3 rounded-lg transition-colors
+                            ${isActive 
+                              ? 'bg-primary text-white' 
+                              : 'text-gray-700 hover:bg-gray-100'}
+                            ${isCollapsed ? 'justify-center' : ''}
+                          `}
+                          title={isCollapsed ? item.name : ''}
+                        >
+                          <Icon size={18} />
+                          {!isCollapsed && (
+                            <span className="ml-3 truncate">{item.name}</span>
+                          )}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
+            </div>
+          ))}
         </div>
 
         {/* Footer */}
