@@ -114,24 +114,26 @@ const Sidebar = memo(() => {
     if (isClient) {
       localStorage.setItem('sidebarCollapsed', String(newState));
       
-      // Notify layout about sidebar width change
+      // Notify layout about sidebar width change immediately
       const event = new CustomEvent('sidebarStateChange', { 
         detail: { 
           isCollapsed: newState,
-          width: newState ? COLLAPSED_WIDTH : EXPANDED_WIDTH
+          width: newState ? COLLAPSED_WIDTH : EXPANDED_WIDTH,
+          instant: true // Add flag to indicate instant transition
         } 
       });
       window.dispatchEvent(event);
     }
   }, [isCollapsed, isClient]);
 
-  // Notify layout of sidebar width on mount
+  // Notify layout of sidebar width on mount with instant transition
   useEffect(() => {
     if (isClient) {
       const event = new CustomEvent('sidebarStateChange', { 
         detail: { 
           isCollapsed: isCollapsed,
-          width: isCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH
+          width: isCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH,
+          instant: true // Add flag to indicate instant transition
         } 
       });
       window.dispatchEvent(event);
@@ -267,8 +269,11 @@ const Sidebar = memo(() => {
       {/* Desktop Sidebar */}
       <div
         data-sidebar
-        className="hidden lg:flex flex-col h-screen bg-white fixed top-0 left-0 z-20 border-r border-gray-100 shadow-sm transition-all duration-300"
-        style={{ width: isCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH }}
+        className="hidden lg:flex flex-col h-screen bg-white fixed top-0 left-0 z-20 border-r border-gray-100 shadow-sm"
+        style={{ 
+          width: isCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH,
+          transition: 'width 0s'  // Remove transition for width changes
+        }}
       >
         {/* Header */}
         <div className="p-4 flex items-center justify-between border-b border-gray-100">

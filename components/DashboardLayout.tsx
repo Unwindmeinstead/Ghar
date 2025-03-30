@@ -25,6 +25,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = memo(({ children, t
   const [isHeaderVisible, setIsHeaderVisible] = useState<boolean>(true);
   const [lastScrollY, setLastScrollY] = useState<number>(0);
   const [isClient, setIsClient] = useState<boolean>(false);
+  const [instantTransition, setInstantTransition] = useState<boolean>(true); // Default to instant transitions
   const { isModalOpen, openModal, closeModal, currentFormType } = useFormContext();
   
   // Set isClient after component mounts
@@ -39,6 +40,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = memo(({ children, t
     const handleSidebarStateChange = (event: CustomEvent) => {
       if (event.detail && typeof event.detail.width === 'number') {
         setSidebarWidth(event.detail.width);
+        // Check if instant transition flag is set
+        if (event.detail.instant !== undefined) {
+          setInstantTransition(event.detail.instant);
+        }
       }
     };
     
@@ -105,10 +110,11 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = memo(({ children, t
       <Sidebar />
       
       <div 
-        className="flex-1 transition-all duration-300 ease-in-out"
+        className={`flex-1 ${!instantTransition ? 'transition-all duration-300 ease-in-out' : ''}`}
         style={{ 
           marginLeft: `${sidebarWidth}px`,
-          width: `calc(100% - ${sidebarWidth}px)` 
+          width: `calc(100% - ${sidebarWidth}px)`,
+          transition: instantTransition ? 'none' : undefined
         }}
       >
         <header 
